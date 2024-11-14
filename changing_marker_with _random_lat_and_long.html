@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Default MapplsPin">
+    <title>GPS Visualization with Mappls</title>
+    <style>
+        /* Full-screen map style */
+        #map {
+            height: 100vh;
+            width: 100%;
+            background-color: #f0f0f0;
+        }
+    </style>
+    <!-- Load Mappls API script -->
+    <script src="https://apis.mappls.com/advancedmaps/api/5033ed29-1007-4c96-829c-1eeaaa695433/map_sdk?layer=vector&v=3.0&callback=initMap1"></script>
+    <script src="https://apis.mappls.com/advancedmaps/api/5033ed29-1007-4c96-829c-1eeaaa695433/map_sdk_plugins?v=3.0"></script>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script>
+        var map;
+        var marker;
+        const centerLat = 12.911983666666666;  // Latitude of the center point
+        const centerLng = 77.633295;           // Longitude of the center point
+
+        /* Initialize Map and Marker */
+        function initMap1() {
+            // Initialize the map
+            map = new mappls.Map('map', {
+                center: [centerLat, centerLng],  // Set initial center (latitude, longitude)
+                zoom: 18
+            });
+
+            // Wait for the map to fully load and add the marker
+            map.on('load', function () {
+                console.log("Map has loaded successfully.");
+                addMarker();  // Call function to add marker
+                startRandomUpdates();  // Start the random GPS updates
+            });
+        }
+
+        /* Function to add marker to the map */
+        function addMarker() {
+            if (map) {
+                // Initial marker position
+                const initialPosition = [centerLat, centerLng];
+                
+                // Create marker at initial position
+                marker = new mappls.Marker({
+                    position: initialPosition,  // Initial marker position
+                    map: map
+                });
+
+                console.log("Marker added to map at position:", initialPosition);
+            } else {
+                console.error("Map is not initialized yet.");
+            }
+        }
+
+        /* Function to generate random lat/lng within 1000 km of center */
+        function generateRandomGPS(centerLat, centerLng, radiusKm) {
+            const radius = radiusKm * 1000;  // Convert km to meters
+            const randLat = (Math.random() * 2 - 1) * radius / 111320;  // Random change in latitude
+            const randLng = (Math.random() * 2 - 1) * radius / (Math.cos(centerLat * Math.PI / 180) * 40008000 / 360);  // Random change in longitude
+
+            const newLat = centerLat + randLat;
+            const newLng = centerLng + randLng;
+
+            return [newLat, newLng];
+        }
+
+        /* Function to update the marker every 8 seconds */
+        function startRandomUpdates() {
+            setInterval(() => {
+                const newCoordinates = generateRandomGPS(centerLat, centerLng, 1000);  // Generate random coordinates within 1000 km
+                console.log("Generated new random GPS coordinates:", newCoordinates);
+
+                if (marker) {
+                    marker.setPosition(newCoordinates);  // Update marker position
+                    map.panTo(newCoordinates);  // Ensure the map centers around the new position
+                }
+            }, 8000);  // Update every 8 seconds
+        }
+    </script>
+</body>
+</html>

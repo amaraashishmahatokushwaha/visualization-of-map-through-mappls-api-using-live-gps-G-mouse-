@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Default MapplsPin">
+    <title>GPS Visualization with Mappls</title>
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+            background-color: #f0f0f0;
+        }
+    </style>
+    <!-- Load socket.io -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <!-- Load Mappls API script -->
+    <script src="https://apis.mappls.com/advancedmaps/api/5033ed29-1007-4c96-829c-1eeaaa695433/map_sdk?layer=vector&v=3.0&callback=initMap1"></script>
+    <script src="https://apis.mappls.com/advancedmaps/api/5033ed29-1007-4c96-829c-1eeaaa695433/map_sdk_plugins?v=3.0"></script>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script>
+        let map;
+        let marker;
+        let gpsDataQueue = [];
+        let firstUpdateReceived = false;
+
+        // Define an array of icon URLs for different colors
+        const markerIcons = [
+            "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+            "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+            "https://maps.google.com/mapfiles/ms/icons/purple-dot.png",
+            "https://maps.google.com/mapfiles/ms/icons/orange-dot.png"
+        ];
+        let iconIndex = 0; // Start with the first icon
+
+        function initMap1() {
+            map = new mappls.Map('map', {
+                center: [12.911983666666666, 77.633295],
+                zoom: 18
+            });
+
+            map.on('load', function () {
+                console.log("Map has loaded successfully.");
+            });
+
+            const socket = io.connect("http://localhost:3000");
+            console.log("WebSocket connection established");
+
+            socket.on('gps-update', (data) => {
+                console.log("Received GPS Data:", data);
+                const { latitude, longitude } = data;
+
+                if (latitude && longitude) {
+                    gpsDataQueue.push({ latitude, longitude });
+
+                    if (!firstUpdateReceived) {
+                        firstUpdateReceived = true;
+                        processGPSUpdates();
+                    }
+                } else {
+                    console.error("Invalid GPS data:", data);
+                }
+            });
+
+            socket.on('connect_error', (err) => {
+                console.error("WebSocket connection error:", err);
+                alert("WebSocket connection failed. Please check your server.");
+            });
+        }
+
+        function updateMarkerPosition(latitude, longitude) {
+            // Remove the existing marker (if any) before adding a new one
+            if (marker) {
+                marker.remove();
+            }
+
+            // Cycle through the icon URLs for each update
+            iconIndex = (iconIndex + 1) % markerIcons.length;
+            const iconUrl = markerIcons[iconIndex];
+
+            // Create a new marker with the updated icon and position
+            marker = new mappls.Marker({
+                map: map,
+                icon: iconUrl // Set new icon with a different color
+            }).setLngLat([longitude, latitude]);
+
+            console.log("Marker updated at position:", latitude, longitude, "with icon:", iconUrl);
+        }
+
+        function processGPSUpdates() {
+            if (gpsDataQueue.length > 0) {
+                const gpsData = gpsDataQueue.shift();
+                
+                if (gpsData.latitude && gpsData.longitude) {
+                    updateMarkerPosition(gpsData.latitude, gpsData.longitude);
+                } else {
+                    console.error("Invalid GPS data:", gpsData);
+                }
+            }
+
+            // Call this function every 8 seconds to process the next GPS update
+            setTimeout(processGPSUpdates, 8000);
+        }
+    </script>
+</body>
+</html>

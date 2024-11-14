@@ -1,0 +1,81 @@
+<html>
+<head>
+    <title>Tracking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Tracking">
+
+    <script src="https://apis.mappls.com/advancedmaps/api/4620c704-0655-4205-a542-cce4a1b06e27/map_sdk?layer=vector&v=3.0&callback=initMap1"></script>
+    <script src="https://apis.mappls.com/advancedmaps/api/4620c704-0655-4205-a542-cce4a1b06e27/map_sdk_plugins?v=3.0"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        /* Map Initialization */
+        var map;
+
+        function initMap1() {
+            map = new mappls.Map('map', {
+                center: [12.9218, 77.628872], // Centering the map based on new coordinates
+                zoom: 12
+            });
+            map.addListener('load', function() {
+                /* Tracking plugin initialization */
+                var tracking_option = {
+                    map: map,
+                    start: {
+                        geoposition: "12.911983666666666,77.633295" 
+                        //geoposition: "27.000000,85.583330"// Updated start position
+                    },
+                    end: {
+                        geoposition: "12.93395,77.622452" 
+                        //geoposition: "27.000000,85.583330"// Updated end position
+                    },
+                    fitBounds: true,
+                    ccpIconWidth: 70,
+                    strokeWidth: 7,
+                    routeColor: "blue",
+                    /* sPopup:"Start",
+                       cPopup:'<h3>Current Popup</h3>',
+                       dPopup:"End" */
+                }
+                tracking_plugin = mappls.tracking(tracking_option, function(data) {
+                    console.log(data);
+                    data1 = data;
+                });
+            });
+
+            map.on('click', function(e) {
+                var user = [e.lngLat.lng, e.lngLat.lat];
+                data1.trackingCall({
+                    location: user,
+                    reRoute: true,
+                    heading: true,
+                    mapCenter: false,
+                    buffer: 50,
+                    delay: 3000,
+                    fitBounds: false,
+                    fitboundsOptions: {
+                        padding: 80
+                    },
+                    callback: function(data) {
+                        console.log(data);
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
